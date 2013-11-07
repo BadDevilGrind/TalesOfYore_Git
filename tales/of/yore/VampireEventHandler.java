@@ -366,7 +366,7 @@ public class VampireEventHandler {
 			}
 			else if(event.entityLiving.getHeldItem().getTagCompound().getString("purity") == "Pure")
 			{
-				bottledBlood.stackTagCompound.setString("amount", "2000");
+				bottledBlood.stackTagCompound.setString("amount", "1500");
 			}
 			else if(event.entityLiving.getHeldItem().getTagCompound().getString("purity") == "Unpure")
 			{
