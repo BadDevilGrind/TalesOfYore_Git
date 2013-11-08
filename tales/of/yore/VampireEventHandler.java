@@ -83,7 +83,7 @@ public class VampireEventHandler {
 			}
 			if (player.isVampire())
 			{	
-			EntityPlayer foodPlayer = (EntityPlayer)event.entity;
+				EntityPlayer foodPlayer = (EntityPlayer)event.entity;
 			
 			
 				if(!world.isRemote)
@@ -95,7 +95,13 @@ public class VampireEventHandler {
 					foodPlayer.setAir(100);					
 				}
 				if(player.getNightvision() && !world.isRemote)event.entityLiving.addPotionEffect(new PotionEffect(Potion.nightVision.id, 400, 0));
-	
+				
+				
+				if(foodPlayer.getHeldItem() != null && foodPlayer.getHeldItem().itemID == Item.ingotIron.itemID)
+				{
+					event.entity.setFire(1);
+				}
+				
 				player.consumeBlood(1);
 				
 				if(player.age >= 10000*24000)
@@ -308,6 +314,22 @@ public class VampireEventHandler {
 		itemList.add(Item.bakedPotato.itemID);
 		itemList.add(Item.beefCooked.itemID);
 		itemList.add(Item.beefRaw.itemID);
+		itemList.add(Item.porkCooked.itemID);
+		itemList.add(Item.porkRaw.itemID);
+		itemList.add(Item.bowlSoup.itemID);
+		itemList.add(Item.chickenCooked.itemID);
+		itemList.add(Item.chickenRaw.itemID);
+		itemList.add(Item.cookie.itemID);
+		itemList.add(Item.fishCooked.itemID);
+		itemList.add(Item.fishRaw.itemID);
+		itemList.add(Item.melon.itemID);
+		itemList.add(Item.rottenFlesh.itemID);
+		itemList.add(Item.spiderEye.itemID);
+		itemList.add(Item.carrot.itemID);
+		itemList.add(Item.potato.itemID);
+		itemList.add(Item.poisonousPotato.itemID);
+		itemList.add(Item.pumpkinPie.itemID);
+		itemList.add(Item.appleGold.itemID);
 		
 		
 		//Draw blood
@@ -336,7 +358,10 @@ public class VampireEventHandler {
 		}		
 
 		//Can't eat food
-		if(event.action == Action.RIGHT_CLICK_AIR && vPlayer.isVampire() && itemList.contains(event.entityPlayer.getHeldItem().itemID)){ event.setCanceled(true); event.entityPlayer.addChatMessage("Vampires can't eat regular food!"); return; }
+		if(event.action == Action.RIGHT_CLICK_AIR && event.entityPlayer.getHeldItem() != null && vPlayer.isVampire() && itemList.contains(event.entityPlayer.getHeldItem().itemID))
+		{ 
+			event.setCanceled(true); event.entityPlayer.addChatMessage("Vampires can't eat regular food!"); return; 
+		}
 		
 		//Can't sleep in beds
 		if (event.action == Action.RIGHT_CLICK_BLOCK && vPlayer.isVampire() && event.entityLiving.worldObj.getBlockId(event.x, event.y, event.z) == Block.bed.blockID)
@@ -441,12 +466,27 @@ public class VampireEventHandler {
 				{
 					event.setResult(Result.DENY);
 					event.setCanceled(true);
-					return;
+					
 					
 				}
 				if(event.source == DamageSource.onFire)
 				{
 					event.entityLiving.attackEntityFrom(DamageSource.inFire, 3);
+				}
+				if(event.source.getSourceOfDamage() instanceof EntityPlayer)
+				{
+					EntityPlayer dmgSource = (EntityPlayer)event.source.getSourceOfDamage();
+					if(dmgSource.getHeldItem() != null)
+					{
+						if(dmgSource.getHeldItem().itemID == Item.swordIron.itemID)
+						{
+							event.entity.setFire(1);
+						}
+						else if(dmgSource.getHeldItem().itemID == Item.swordWood.itemID || dmgSource.getHeldItem().itemID == Item.stick.itemID)
+						{
+							event.entityLiving.attackEntityFrom(DamageSource.generic, event.ammount * 4);
+						}
+					}
 				}
 			}
 
