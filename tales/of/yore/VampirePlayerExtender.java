@@ -58,7 +58,7 @@ public class VampirePlayerExtender implements IExtendedEntityProperties {
 		properties.setString("maker", this.maker);
 		properties.setString("bloodline", this.bloodline);
 		properties.setBoolean("isOriginal", this.isOriginal);
-		properties.setBoolean("wantsMessage", this.wantsMessages);
+		properties.setBoolean("wantsMessages", this.wantsMessages);
 		properties.setBoolean("nightvision", this.nightVision);
 		properties.setInteger("power", this.power);
 		

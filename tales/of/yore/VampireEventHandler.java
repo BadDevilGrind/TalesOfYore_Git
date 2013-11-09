@@ -6,6 +6,8 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -68,7 +70,6 @@ public class VampireEventHandler {
 	@ForgeSubscribe
 	public void onLivingUpdateEvent(LivingUpdateEvent event)
 	{
-
 		if (event.entity instanceof EntityPlayer)
 		{			
 			VampirePlayerExtender player = VampirePlayerExtender.get((EntityPlayer) event.entity);
@@ -83,9 +84,7 @@ public class VampireEventHandler {
 			}
 			if (player.isVampire())
 			{	
-				EntityPlayer foodPlayer = (EntityPlayer)event.entity;
-			
-			
+				EntityPlayer foodPlayer = (EntityPlayer)event.entity;			
 				if(!world.isRemote)
 				{
 					//"player.currentBlood/3600 - foodPlayer.getFoodStats().getFoodLevel()" is to be used if I want the food meter to represent currentBlood
@@ -93,7 +92,7 @@ public class VampireEventHandler {
 					else foodPlayer.getFoodStats().addStats(20, 20);
 					foodPlayer.getFoodStats().onUpdate(foodPlayer);	
 					foodPlayer.setAir(100);					
-				}
+				
 				if(player.getNightvision() && !world.isRemote)event.entityLiving.addPotionEffect(new PotionEffect(Potion.nightVision.id, 400, 0));
 				
 				
@@ -136,30 +135,15 @@ public class VampireEventHandler {
 					}
 					else
 					{
-					event.entityLiving.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 2, (3 + Math.round(player.age/240000))));
+						event.entityLiving.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 2, (3 + Math.round(player.age/240000))));					
 					}
-			    }	
-				//Daytime burn				
-				if (world.isDaytime() && !world.isRaining())
+			    }
+				
+				if (event.entityLiving.isPotionActive(Potion.moveSlowdown)) 
 				{
-					if (event.entityLiving.posX >= 0 && event.entityLiving.posZ >= 0 && world.canBlockSeeTheSky((int)event.entity.posX, (int)event.entity.posY+1, (int)event.entity.posZ))
+					if (event.entityLiving.getActivePotionEffect(Potion.moveSlowdown).getDuration()==0) 
 					{
-						event.entity.setFire(1);
-
-					}
-					else if (event.entityLiving.posX >= 0 && event.entityLiving.posZ < 0 && world.canBlockSeeTheSky((int)event.entity.posX, (int)event.entity.posY+1, (int)event.entity.posZ-1))
-					{
-						event.entity.setFire(1);
-
-					}
-					else if (event.entityLiving.posX < 0 && event.entityLiving.posZ < 0 && world.canBlockSeeTheSky((int)event.entity.posX-1, (int)event.entity.posY+1, (int)event.entity.posZ-1))
-					{
-						event.entity.setFire(1);
-
-					}
-					else if (event.entityLiving.posX < 0 && event.entityLiving.posZ >= 0 && world.canBlockSeeTheSky((int)event.entity.posX-1, (int)event.entity.posY+1, (int)event.entity.posZ))
-					{
-						event.entity.setFire(1);
+						event.entityLiving.removePotionEffect(Potion.moveSlowdown.id);
 					}
 				}
 				
@@ -182,13 +166,13 @@ public class VampireEventHandler {
 						{
 							EntityPlayer pPlayer = (EntityPlayer)event.entityLiving;
 							pPlayer.heal(2);
-							player.consumeBlood(100);
+							player.consumeBlood(500);
 						}
 						else
 						{
 							EntityPlayer pPlayer = (EntityPlayer)event.entityLiving;
 							pPlayer.heal(2);
-							player.consumeBlood(400);	
+							player.consumeBlood(800);	
 						}
 					}
 					secondTicker = 0;
@@ -197,13 +181,82 @@ public class VampireEventHandler {
 				{
 					secondTicker++;
 				}
+			  }//World remote check
 				
 			}
 			//isVampire End
 		}
 	}
 	
+	@ForgeSubscribe
+	public void noPassSilver(LivingUpdateEvent event)
+	{
+		if (event.entity instanceof EntityPlayer)
+		{					
+			VampirePlayerExtender player = VampirePlayerExtender.get((EntityPlayer) event.entity);
+			World world = event.entityLiving.worldObj;
+			if (player.isVampire())
+			{
+					if(event.entityLiving.posX >= 0 && event.entityLiving.posZ >= 0 && world.getBlockId((int)event.entity.posX, (int)event.entity.posY-1, (int)event.entity.posZ) == Block.blockIron.blockID)
+					{
+						event.entity.setFire(1);
+					}
+					else if(event.entityLiving.posX >= 0 && event.entityLiving.posZ < 0 && world.getBlockId((int)event.entity.posX, (int)event.entity.posY-1, (int)event.entity.posZ-1) == Block.blockIron.blockID)
+					{
+						event.entity.setFire(1);
+					}
+					else if(event.entityLiving.posX < 0 && event.entityLiving.posZ >= 0 && world.getBlockId((int)event.entity.posX-1, (int)event.entity.posY-1, (int)event.entity.posZ) == Block.blockIron.blockID)
+					{
+						event.entity.setFire(1);
+					}
+					else if(event.entityLiving.posX < 0 && event.entityLiving.posZ < 0 && world.getBlockId((int)event.entity.posX-1, (int)event.entity.posY-1, (int)event.entity.posZ-1) == Block.blockIron.blockID)
+					{
+						event.entity.setFire(1);
+					}				
+			}
+			
+		}
+	}
+	
 
+	@ForgeSubscribe
+	public void onDaytimeBurn(LivingUpdateEvent event)
+	{
+		if (event.entity instanceof EntityPlayer)
+		{					
+			VampirePlayerExtender player = VampirePlayerExtender.get((EntityPlayer) event.entity);
+			World world = event.entityLiving.worldObj;
+			if (player.isVampire())
+			{	
+
+				//Daytime burn				
+				if (world.isDaytime() && !world.isRaining())
+				{
+					if (event.entityLiving.posX >= 0 && event.entityLiving.posZ >= 0 && world.canBlockSeeTheSky((int)event.entity.posX, (int)event.entity.posY+1, (int)event.entity.posZ))
+					{
+						event.entity.setFire(1);
+		
+					}
+					else if (event.entityLiving.posX >= 0 && event.entityLiving.posZ < 0 && world.canBlockSeeTheSky((int)event.entity.posX, (int)event.entity.posY+1, (int)event.entity.posZ-1))
+					{
+						event.entity.setFire(1);
+		
+					}
+					else if (event.entityLiving.posX < 0 && event.entityLiving.posZ < 0 && world.canBlockSeeTheSky((int)event.entity.posX-1, (int)event.entity.posY+1, (int)event.entity.posZ-1))
+					{
+						event.entity.setFire(1);
+		
+					}
+					else if (event.entityLiving.posX < 0 && event.entityLiving.posZ >= 0 && world.canBlockSeeTheSky((int)event.entity.posX-1, (int)event.entity.posY+1, (int)event.entity.posZ))
+					{
+						event.entity.setFire(1);
+					}
+				}
+			}
+		}
+	}
+	
+	
 	
 	//Handling death
 	@ForgeSubscribe
@@ -360,7 +413,9 @@ public class VampireEventHandler {
 		//Can't eat food
 		if(event.action == Action.RIGHT_CLICK_AIR && event.entityPlayer.getHeldItem() != null && vPlayer.isVampire() && itemList.contains(event.entityPlayer.getHeldItem().itemID))
 		{ 
-			event.setCanceled(true); event.entityPlayer.addChatMessage("Vampires can't eat regular food!"); return; 
+			event.setCanceled(true); 
+			if(vPlayer.returnMessages())event.entityPlayer.addChatMessage("Vampires can't eat regular food!"); 
+			return; 
 		}
 		
 		//Can't sleep in beds
@@ -373,10 +428,21 @@ public class VampireEventHandler {
 		//Can't open doors with Iron under them
 		if (event.action == Action.RIGHT_CLICK_BLOCK && vPlayer.isVampire() && event.entityLiving.worldObj.getBlockId(event.x, event.y, event.z) == Block.doorWood.blockID)
 		{
-			if (event.entityLiving.worldObj.getBlockId(event.x, event.y-1, event.z) == Block.blockIron.blockID || event.entityLiving.worldObj.getBlockId(event.x, event.y-2, event.z) == Block.blockIron.blockID || event.entityLiving.worldObj.getBlockId(event.x, event.y-3, event.z) == Block.blockIron.blockID)
+			if (event.entityLiving.worldObj.getBlockId(event.x, event.y-1, event.z) == Block.doorWood.blockID)
 			{
-				event.setCanceled(true);
-				return;
+				if(event.entityLiving.worldObj.getBlockId(event.x, event.y-2, event.z) == Block.blockIron.blockID || event.entityLiving.worldObj.getBlockId(event.x, event.y-3, event.z) == Block.blockIron.blockID)
+				{
+					event.setCanceled(true);
+					return;
+				}
+			}
+			else if(event.entityLiving.worldObj.getBlockId(event.x, event.y+1, event.z) == Block.doorWood.blockID)
+			{
+				if(event.entityLiving.worldObj.getBlockId(event.x, event.y-1, event.z) == Block.blockIron.blockID || event.entityLiving.worldObj.getBlockId(event.x, event.y-2, event.z) == Block.blockIron.blockID)
+				{
+					event.setCanceled(true);
+					return;
+				}
 			}
 		}
 		
@@ -447,7 +513,6 @@ public class VampireEventHandler {
 					itemStack.stackTagCompound.setString("type", event.entityLiving.getEntityName());
 					pPlayer.inventory.setInventorySlotContents(pPlayer.inventory.currentItem, itemStack);
 					return;
-
 				}
 			}
 		}
@@ -462,12 +527,10 @@ public class VampireEventHandler {
 			VampirePlayerExtender player = VampirePlayerExtender.get((EntityPlayer) event.entityLiving);
 			if (player.isVampire())
 			{
-				if(event.source == DamageSource.inWall)
+				if(event.source == DamageSource.inWall || event.source == DamageSource.starve)
 				{
 					event.setResult(Result.DENY);
-					event.setCanceled(true);
-					
-					
+					event.setCanceled(true);					
 				}
 				if(event.source == DamageSource.onFire)
 				{
@@ -533,10 +596,13 @@ public class VampireEventHandler {
 						System.out.println("[EVENT] Blood: " + event.source.getEntity().getEntityName() + " just fed");
 							
 						EntityPlayer messagePlayer = (EntityPlayer)event.source.getSourceOfDamage();
-						if(player.returnMessages())messagePlayer.addChatMessage("You fed for " + event.ammount*100 + " blood from " + event.entity.getEntityName());
+						if(player.returnMessages())messagePlayer.addChatMessage("You fed for " + event.ammount*1000 + " blood from " + event.entity.getEntityName());
+						return;
 					}
-				
-				
+					if(player.isVampire() && !player.isFeeding())
+					{
+						event.entityLiving.attackEntityFrom(DamageSource.generic, event.ammount);
+					}				
 				}	
 			}
 			catch (Exception e)
@@ -558,10 +624,15 @@ public class VampireEventHandler {
 			if(event.target instanceof EntityPlayer)
 			{
 				
+				List<String> mobList = new ArrayList<String>();
+				mobList.add("Zombie");
+				mobList.add("Skeleton");
+				
+				
 				VampirePlayerExtender player = VampirePlayerExtender.get((EntityPlayer) event.target);
 				EntityPlayer playerEnt = (EntityPlayer)event.target;
 				
-				if (player.isVampire())
+				if (player.isVampire() && mobList.contains(event.entityLiving.getEntityName()))
 				{
 					((EntityLiving)event.entityLiving).setAttackTarget(null);
 				}

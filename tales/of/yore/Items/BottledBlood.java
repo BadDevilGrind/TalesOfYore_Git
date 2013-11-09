@@ -35,7 +35,7 @@ public class BottledBlood extends Item {
 	        	{
 	        		if(par1ItemStack.getTagCompound().getString("purity") == "Vampire")
 	        		{
-
+	        				
 		        	}
 	        		else
 	        		{
